@@ -111,11 +111,6 @@ def _hub_reference(model_id: str, revision: str) -> str:
     return f"hf-hub:{model_id}@{revision}"
 
 
-def _hub_reference(model_id: str, revision: str) -> str:
-    """timm's ``hf-hub:owner/name@revision`` form; ``hf_split`` passes ``revision=`` to hf_hub_download."""
-    return f"hf-hub:{model_id}@{revision}"
-
-
 def top_k_accuracy(predictions: Sequence[Any], targets: Sequence[int], k: int = 1) -> float:
     """Fraction of items whose target index is among the first ``k`` predicted indices.
 
