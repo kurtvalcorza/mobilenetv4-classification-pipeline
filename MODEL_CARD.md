@@ -20,7 +20,11 @@ base_model: timm/mobilenetv4_conv_small.e2400_r224_in1k
 
 ## Interactive Colab Tutorials
 
-This release ships no tutorial notebook (`tutorials/` is absent). The package is exercised through its test suite (`tests/`) and the run instructions in the README; a `NOTEBOOK_SPEC` 1.0 `TASK-INFERENCE` notebook is a follow-up, not a claim this card makes.
+This pipeline provides a ready-to-run interactive Google Colab notebook that exercises the repository's public API end to end — bootstrap a fresh runtime, stage and verify the pinned upstream revision, validate an input, run the task, and inspect and export the outputs:
+
+- **Task Inference Tutorial**:  
+  [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/kurtvalcorza/mobilenetv4-classification-pipeline/blob/main/tutorials/mobilenetv4_classification_colab.ipynb) [`mobilenetv4_classification_colab.ipynb`](https://github.com/kurtvalcorza/mobilenetv4-classification-pipeline/blob/main/tutorials/mobilenetv4_classification_colab.ipynb)  
+  *ImageNet-1k single-label classification with the pinned `timm/mobilenetv4_conv_small.e2400_r224_in1k` weights (15 MB, CPU-natural): one PIL image → 1000 softmax scores → argmax and rank-ordered top-5; `top_k_accuracy` only when a ground-truth index is supplied.*
 
 ---
 
