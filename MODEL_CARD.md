@@ -1,16 +1,28 @@
 ---
 license: apache-2.0
-model_card_spec: "1.0"
+model_card_spec: "1.1"
 pipeline_tag: image-classification
 base_model: timm/mobilenetv4_conv_small.e2400_r224_in1k
 ---
 
-# MobileNetV4-Conv-Small e2400_r224_in1k (DIMER package v0.1.0)
+# MobileNetV4-Conv-Small e2400_r224_in1k (DIMER package v0.1.0) — Image Classification
 
 [![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-timm%2Fmobilenetv4__conv__small.e2400__r224__in1k-ffcc4d?style=flat)](https://huggingface.co/timm/mobilenetv4_conv_small.e2400_r224_in1k)
-[![GitHub](https://img.shields.io/badge/GitHub-huggingface%2Fpytorch--image--models-181717?style=flat&logo=github&logoColor=white)](https://github.com/huggingface/pytorch-image-models)
-[![arXiv](https://img.shields.io/badge/arXiv-2404.10518-b31b1b.svg)](https://arxiv.org/abs/2404.10518)
-[![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
+[![Upstream GitHub](https://img.shields.io/badge/Upstream%20GitHub-huggingface%2Fpytorch--image--models-181717?style=flat&logo=github&logoColor=white)](https://github.com/huggingface/pytorch-image-models)
+[![arXiv Paper](https://img.shields.io/badge/arXiv-2404.10518-b31b1b.svg)](https://arxiv.org/abs/2404.10518)
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Pipeline](https://img.shields.io/badge/Pipeline-mobilenetv4--classification--pipeline-2ea44f?style=flat&logo=github)](https://github.com/kurtvalcorza/mobilenetv4-classification-pipeline)
+
+> [!WARNING]
+> ⚠️ **Provided for research, training, and evaluation purposes only.** Model weights are redistributed unmodified under their upstream license, which controls your use, including any commercial use or redistribution; the accompanying code and notebooks are released under this repository's license. All of it is supplied **"as is"**, without warranty of any kind, and has not been validated for production, clinical, or safety-critical use. Running the notebooks downloads third-party weights and datasets governed by their own licenses and consumes compute on your own Colab/Kaggle account. To the maximum extent permitted by law, the maintainers of this repository and the DIMER platform accept no liability for any damages arising from their use. Hosting implies no affiliation with or endorsement by the original authors.
+
+---
+
+## Interactive Colab Tutorials
+
+This release ships no tutorial notebook (`tutorials/` is absent). The package is exercised through its test suite (`tests/`) and the run instructions in the README; a `NOTEBOOK_SPEC` 1.0 `TASK-INFERENCE` notebook is a follow-up, not a claim this card makes.
+
+---
 
 ###### Description
 
