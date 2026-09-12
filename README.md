@@ -52,6 +52,16 @@ pipe = MobileNetV4ClassificationPipeline.from_pretrained(device="cpu")
 print(pipe.predict(Image.new("RGB", (256, 256), (90, 140, 200)))["predictions"][0]["predicted_label"])
 ```
 
+## Tutorials
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/kurtvalcorza/mobilenetv4-classification-pipeline/blob/main/tutorials/mobilenetv4_classification_colab.ipynb)
+
+`tutorials/mobilenetv4_classification_colab.ipynb` is declared `TASK-INFERENCE` under DIMER Notebook Specification 1.0. Its default path generates a synthetic 256×256 gradient in code (no download, no ground truth), surfaces the pipeline ceilings, resolves the pinned model through the public API, classifies with the argmax rule over uncalibrated softmax scores, computes `top_k_accuracy` only when a ground-truth class index is supplied, and exports JSON plus a rank-ordered CSV. BYOD is optional and gated off by default. CPU is the natural default runtime for this 15 MB model. See `tutorials/README.md` for the registry and `docs/release-verification.md` for the release gate.
+
+## Release status
+
+**Candidate.** Static/unit checks do not constitute clean-runtime notebook evidence. The clean-runtime run of the tutorial is pending; complete `docs/release-verification.md` against the exact release revision before calling the notebook release-grade.
+
 ## Documents
 
 - [`MODEL_CARD.md`](MODEL_CARD.md) — MODEL_CARD_SPEC 1.0 card
