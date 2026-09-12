@@ -1,0 +1,25 @@
+{
+  "format": "dimer_hf_snapshot",
+  "formatVersion": 1,
+  "modelKey": "mobilenetv4-conv-small",
+  "modelId": "timm/mobilenetv4_conv_small.e2400_r224_in1k",
+  "revision": "331fb803779522b685cf942e15f914fb6741c1eb",
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 13066,
+      "sha256": "864651a7a9c0457023728da202cb1119abf3fa0872ded374ba736efde6454eb7"
+    },
+    {
+      "path": "config.json",
+      "bytes": 681,
+      "sha256": "ecd20bcf1287aaa88129a736d188904d0b134c96e152b55b241be895657fe41a"
+    },
+    {
+      "path": "model.safetensors",
+      "bytes": 15223016,
+      "sha256": "7a7102ec18f62bbfb555b6fe829bbb5af749516b84174926c29ffdfdfc03aec4"
+    }
+  ],
+  "totalBytes": 15236763
+}
