@@ -212,3 +212,85 @@ def test_stage_missing_files_refuses_foreign_manifest(tmp_path):
     (tmp_path / "dimer-base-manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
     with pytest.raises(ValueError, match="refusing to stage"):
         stage_missing_files(tmp_path, allow_download=True, downloader=lambda *_: None)
+
+
+def test_predict_fine_tuned_reloaded_artifact_default_top_k(tmp_path: Path) -> None:
+    """Regression test: reloaded 2-class artifact on default prediction path bounds top_k to num_classes."""
+    import timm
+    from safetensors.torch import save_file
+
+    arch_name = MODEL_ID.split("/", 1)[1]
+    model = timm.create_model(arch_name, pretrained=False, num_classes=2)
+    weights_path = tmp_path / "model.safetensors"
+    save_file({k: v.contiguous() for k, v in model.state_dict().items()}, weights_path)
+    config = {
+        "num_classes": 2,
+        "class_names": ["class_a", "class_b"],
+        "model_id": MODEL_ID,
+        "model_revision": MODEL_REVISION,
+    }
+    (tmp_path / "model-config.json").write_text(json.dumps(config), encoding="utf-8")
+
+    pipe = MobileNetV4ClassificationPipeline.from_pretrained(weights_dir=tmp_path)
+    assert pipe.labels == ("class_a", "class_b")
+    assert pipe.source == "finetuned-local"
+
+    # Default prediction path: top_k unspecified -> defaults to min(DEFAULT_TOP_K, 2) == 2
+    image = Image.new("RGB", (32, 32), color=(100, 150, 200))
+    result = pipe.predict(image)
+    assert result["top_k"] == 2
+    assert len(result["predictions"]) == 1
+    pred = result["predictions"][0]
+    assert pred["predicted_label"] in ["class_a", "class_b"]
+    assert len(pred["top_k"]) == 2
+    assert {item["label"] for item in pred["top_k"]} == {"class_a", "class_b"}
+
+    # Explicit top_k exceeding active classes must be rejected
+    with pytest.raises(ValueError, match="top_k"):
+        pipe.predict(image, top_k=3)
+    with pytest.raises(ValueError, match="top_k"):
+        pipe.predict(image, top_k=5)
+
+
+def test_fit_fails_closed_missing_base_weights(tmp_path: Path) -> None:
+    """Regression test: fit() must fail closed with FileNotFoundError if base weights/manifest are missing."""
+    img = Image.new("RGB", (32, 32), color=(100, 100, 100))
+    with pytest.raises(FileNotFoundError):
+        MobileNetV4ClassificationPipeline.fit(
+            train_images=[img, img],
+            train_targets=[0, 1],
+            val_images=[img, img],
+            val_targets=[0, 1],
+            class_names=["class_a", "class_b"],
+            weights_dir=tmp_path / "nonexistent",
+            allow_download=False,
+        )
+
+
+def test_fit_fails_closed_corrupted_base_weights(tmp_path: Path) -> None:
+    """Regression test: fit() must fail closed with ValueError if base weights do not match manifest."""
+    manifest = {
+        "modelId": MODEL_ID,
+        "revision": MODEL_REVISION,
+        "files": [
+            {"path": "config.json", "bytes": 2, "sha256": hashlib.sha256(b"{}").hexdigest()},
+            {"path": "model.safetensors", "bytes": 100, "sha256": "0" * 64},
+        ],
+    }
+    (tmp_path / "dimer-base-manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+    (tmp_path / "config.json").write_text("{}", encoding="utf-8")
+    (tmp_path / "model.safetensors").write_bytes(b"corrupted_bytes")
+
+    img = Image.new("RGB", (32, 32), color=(100, 100, 100))
+    with pytest.raises(ValueError, match="sha256|size"):
+        MobileNetV4ClassificationPipeline.fit(
+            train_images=[img, img],
+            train_targets=[0, 1],
+            val_images=[img, img],
+            val_targets=[0, 1],
+            class_names=["class_a", "class_b"],
+            weights_dir=tmp_path,
+            allow_download=False,
+        )
+
+

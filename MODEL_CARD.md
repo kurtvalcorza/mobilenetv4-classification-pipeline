@@ -1,16 +1,32 @@
 ---
 license: apache-2.0
-model_card_spec: "1.0"
+model_card_spec: "1.1"
 pipeline_tag: image-classification
 base_model: timm/mobilenetv4_conv_small.e2400_r224_in1k
 ---
 
-# MobileNetV4-Conv-Small e2400_r224_in1k (DIMER package v0.1.0)
+# MobileNetV4-Conv-Small e2400_r224_in1k (DIMER package v0.1.0) — Image Classification
 
 [![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-timm%2Fmobilenetv4__conv__small.e2400__r224__in1k-ffcc4d?style=flat)](https://huggingface.co/timm/mobilenetv4_conv_small.e2400_r224_in1k)
-[![GitHub](https://img.shields.io/badge/GitHub-huggingface%2Fpytorch--image--models-181717?style=flat&logo=github&logoColor=white)](https://github.com/huggingface/pytorch-image-models)
-[![arXiv](https://img.shields.io/badge/arXiv-2404.10518-b31b1b.svg)](https://arxiv.org/abs/2404.10518)
-[![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
+[![Upstream GitHub](https://img.shields.io/badge/Upstream%20GitHub-huggingface%2Fpytorch--image--models-181717?style=flat&logo=github&logoColor=white)](https://github.com/huggingface/pytorch-image-models)
+[![arXiv Paper](https://img.shields.io/badge/arXiv-2404.10518-b31b1b.svg)](https://arxiv.org/abs/2404.10518)
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Pipeline](https://img.shields.io/badge/Pipeline-mobilenetv4--classification--pipeline-2ea44f?style=flat&logo=github)](https://github.com/kurtvalcorza/mobilenetv4-classification-pipeline)
+
+> [!WARNING]
+> ⚠️ **Provided for research, training, and evaluation purposes only.** Model weights are redistributed unmodified under their upstream license, which controls your use, including any commercial use or redistribution; the accompanying code and notebooks are released under this repository's license. All of it is supplied **"as is"**, without warranty of any kind, and has not been validated for production, clinical, or safety-critical use. Running the notebooks downloads third-party weights and datasets governed by their own licenses and consumes compute on your own Colab/Kaggle account. To the maximum extent permitted by law, the maintainers of this repository and the DIMER platform accept no liability for any damages arising from their use. Hosting implies no affiliation with or endorsement by the original authors.
+
+---
+
+## Interactive Colab Tutorials
+
+This pipeline provides a ready-to-run interactive Google Colab notebook that exercises the repository's public API end to end — bootstrap a fresh runtime, stage and verify the pinned upstream revision, validate an input, run the task, and inspect and export the outputs:
+
+- **Task Inference Tutorial**:  
+  [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/kurtvalcorza/mobilenetv4-classification-pipeline/blob/main/tutorials/mobilenetv4_classification_colab.ipynb) [`mobilenetv4_classification_colab.ipynb`](https://github.com/kurtvalcorza/mobilenetv4-classification-pipeline/blob/main/tutorials/mobilenetv4_classification_colab.ipynb)  
+  *ImageNet-1k single-label classification with the pinned `timm/mobilenetv4_conv_small.e2400_r224_in1k` weights (15 MB, CPU-natural): one PIL image → 1000 softmax scores → argmax and rank-ordered top-5; `top_k_accuracy` only when a ground-truth index is supplied.*
+
+---
 
 ###### Description
 
@@ -50,7 +66,7 @@ Operating environment: Python 3.12 with `torch==2.14.0`, `torchvision==0.29.0`, 
 
 ###### Performance Measures
 
-The only measure the code reports is `top_k_accuracy(predictions, targets, k)` in `pipeline.py`: the fraction of images whose target index appears among the first `k` predicted indices, for any `k` up to the requested `top_k`. It captures discrete correctness of the ranking, which suits a 1000-way single-label classifier where the operational question is "is the right class first, or at least in the shortlist". It says nothing about calibration or per-class behaviour, so a reader using top-1 alone cannot tell whether errors are near-misses (fixable by a shortlist) or confident mistakes. Upstream reports 73.756 % top-1 / 91.422 % top-5 at 224 px and 74.616 % / 92.072 % at 256 px on the ImageNet-1k validation set (upstream README comparison table); this pipeline has not reproduced those numbers and reports no accuracy of its own. Latency, the reason to pick this model, is reported only as the single smoke measurements above, not as a benchmark.
+The only measure the code reports is `top_k_accuracy(predictions, targets, k)` in `pipeline.py`: the fraction of images whose target index appears among the first `k` predicted indices, for any `k` up to the requested `top_k`. It captures discrete correctness of the ranking, which suits a 1000-way single-label classifier where the operational question is "is the right class first, or at least in the shortlist". It says nothing about calibration or per-class behaviour, so a reader using top-1 alone cannot tell whether errors are near-misses (fixable by a shortlist) or confident mistakes. Upstream reports 73.756 % top-1 / 91.422 % top-5 at 224 px and 74.616 % / 92.072 % at 256 px on the ImageNet-1k validation set (upstream README comparison table); this pipeline has not reproduced those numbers and reports no accuracy of its own. Latency, the reason to pick this model, is reported only as the single smoke measurements above, not as a benchmark. The public `evaluation_report(result, targets)` helper is the only reporting path: it emits a machine-readable report whose verdict is `sample-sanity` with `top_k_accuracy` at k=1 and k=5 when ground-truth indices are supplied, and `not-measurable` otherwise, stating in that case what labelled data would make the task measurable.
 
 ###### Decision thresholds
 
@@ -72,7 +88,7 @@ The pipeline is not intended for decisions in health, safety, criminal justice, 
 
 ###### Mitigations
 
-Implemented and inspectable in `src/mobilenetv4_classification_pipeline/pipeline.py`: (1) supply chain — `MODEL_REVISION` is a 40-hex commit; `verify_snapshot` re-hashes every file in `weights/mobilenetv4-conv-small/dimer-base-manifest.json` and raises on the first size or SHA-256 mismatch before any weight is loaded (during this pass it caught a wrong revision constant in the generated module before any weight was read); the Hub path is taken only with `allow_download=True` and then through timm's `hf-hub:<id>@<revision>` form; `trust_remote_code` is never enabled (timm executes no remote code). (2) Input integrity — `_validate` rejects non-PIL inputs, empty or over-size batches, and images outside 1–4096 px before the model runs. (3) Reproducibility — exact `==` dependency pins, `model.eval()`, deterministic preprocessing from the snapshot's `pretrained_cfg`, and `model_id`/`model_revision` in every result. (4) Refusals — no feature-map or training API is exposed; a missing snapshot with `allow_download=False` raises `FileNotFoundError`. No statistical mitigation (class re-balancing) is applied because the pipeline does not train.
+Implemented and inspectable in `src/mobilenetv4_classification_pipeline/pipeline.py`: (1) supply chain — `MODEL_REVISION` is a 40-hex commit; `verify_snapshot` re-hashes every file in `weights/mobilenetv4-conv-small/dimer-base-manifest.json` and raises on the first size or SHA-256 mismatch before any weight is loaded (during this pass it caught a wrong revision constant in the generated module before any weight was read); the Hub path is taken only with `allow_download=True` and then through timm's `hf-hub:<id>@<revision>` form; `trust_remote_code` is never enabled (timm executes no remote code). (2) Input integrity — `_validate` rejects non-PIL inputs, empty or over-size batches, and images outside 1–4096 px before the model runs, and the public `validate_inputs(images, top_k, names=...)` stage routes through the same private check so it raises exactly what `predict` raises while returning a machine-readable input manifest of the schema, ceilings, per-input observations and verdict. (3) Reproducibility — exact `==` dependency pins, `model.eval()`, deterministic preprocessing from the snapshot's `pretrained_cfg`, and `model_id`/`model_revision` in every result. (4) Refusals — no feature-map or training API is exposed; a missing snapshot with `allow_download=False` raises `FileNotFoundError`. No statistical mitigation (class re-balancing) is applied because the pipeline does not train.
 
 ###### Risks and harms
 
