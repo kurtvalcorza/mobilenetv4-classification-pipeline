@@ -1,6 +1,7 @@
 from .pipeline import (
     DEFAULT_TOP_K,
     DEFAULT_WEIGHTS_DIR,
+    INPUT_SCHEMA,
     MAX_BATCH,
     MAX_IMAGE_SIDE,
     MODEL_ID,
@@ -9,14 +10,17 @@ from .pipeline import (
     MODEL_REVISION,
     NUM_CLASSES,
     MobileNetV4ClassificationPipeline,
+    evaluation_report,
     stage_missing_files,
     top_k_accuracy,
+    validate_inputs,
     verify_snapshot,
 )
 
 __all__ = [
     "DEFAULT_TOP_K",
     "DEFAULT_WEIGHTS_DIR",
+    "INPUT_SCHEMA",
     "MAX_BATCH",
     "MAX_IMAGE_SIDE",
     "MODEL_ID",
@@ -25,7 +29,9 @@ __all__ = [
     "MODEL_REVISION",
     "NUM_CLASSES",
     "MobileNetV4ClassificationPipeline",
+    "evaluation_report",
     "top_k_accuracy",
     "stage_missing_files",
+    "validate_inputs",
     "verify_snapshot",
 ]

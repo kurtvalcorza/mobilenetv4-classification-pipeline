@@ -3,7 +3,7 @@
 `tutorials/mobilenetv4_classification_colab.ipynb` (`TASK-INFERENCE`) is a **release candidate** until
 the exact notebook revision has executed top-to-bottom in a clean supported runtime. Unit tests,
 JSON validation, code-cell compilation, and `tools/validate_release_assets.py` are necessary
-checks but are **not** runtime evidence under DIMER Notebook Specification 1.0. This file is
+checks but are **not** runtime evidence under DIMER Notebook Specification 1.1. This file is
 the durable release-gate record for the notebook.
 
 ## Automatic coverage (static, every pull request)
@@ -14,25 +14,29 @@ CI runs `tools/validate_release_assets.py`, which checks:
   persisted outputs or execution counts; no unresolved placeholder markers; every code cell
   is preceded by an explanatory markdown cell;
 - exactly one tutorial notebook, named in `tutorials/README.md` with its `TASK-INFERENCE`
-  profile and the notebook-spec version; `metadata.dimer` declares that profile and spec `1.0`;
-- the fresh-runtime bootstrap (clone by canonical URL, `DIMER_TUTORIAL_REF`, detached checkout of
-  the requested revision, restart-on-stale-import guard) and the recorded `REPO_SHA` in exports;
-- `MODEL_ID`/`MODEL_REVISION` are imported from the package rather than hard-coded, the revision is
-  a 40-hex immutable commit, and the same identity string appears in `README.md`,
+  profile, the notebook-spec version and the standalone carrier; `metadata.dimer` declares that profile, spec `1.1`, `standalone: true` and `generated_from` (repository, module commit, module SHA-256, generator);
+- the standalone carrier (ST1–ST6, PAR1–PAR3): no clone, repository install or repository import on the
+  primary path; exactly one cell tagged `embedded_module` equal to `src/mobilenetv4_classification_pipeline/pipeline.py`
+  after the generator's documented rewrites; the inline `MANIFEST` equal to the committed snapshot manifest and the
+  inline `PINS` equal to the `pyproject.toml` runtime pins; the notebook byte-identical to `tools/build_notebook.py`
+  output; the pinned-install cell with its restart-on-stale-import guard; `NOTEBOOK_SOURCE` recorded in exports;
+- `MODEL_ID`/`MODEL_REVISION` are bound only in the carried module cell (and repeated in the inline manifest,
+  which the notebook asserts against the module before fetching), the revision is a 40-hex immutable commit, and the same identity string appears in `README.md`,
   `MODEL_CARD.md`, and `docs/WEIGHTS.md` with no stray revisions;
 - the profile-specific public-API calls (`stage_missing_files`, `verify_snapshot`,
-  `MobileNetV4ClassificationPipeline.from_pretrained(weights_dir=...)`, `predict`, `top_k_accuracy`), the ceiling print (`NUM_CLASSES`, `MAX_IMAGE_SIDE`, `MAX_BATCH`),
+  `MobileNetV4ClassificationPipeline.from_pretrained(weights_dir=...)`, `validate_inputs`, `predict`, `evaluation_report`), the ceiling print (`NUM_CLASSES`, `MAX_IMAGE_SIDE`, `MAX_BATCH`),
   the exports, the learner-facing classification statements (argmax decision rule, uncalibrated
   softmax, no shipped threshold, rank-ordered scores) and the gated-off BYOD default listed in
-  the validator; forbidden patterns (credential-in-URL, direct `timm.create_model` /
-  `from timm import` / `from torchvision import` / `from transformers import` /
-  `from huggingface_hub import` use that bypasses the pipeline, `trust_remote_code=True`, `pickle.load`, `torch.load(`, `extractall(`);
+  the validator; forbidden patterns (credential-in-URL, any `git clone` / `github.com` / repository import on the
+  primary path, a mutable `revision='main'`, direct `timm.create_model` / `from timm import` / `from torchvision import` /
+  `from transformers import` / `from huggingface_hub import` use **outside the carried module cell**, `trust_remote_code=True`,
+  `pickle.load`, `torch.load(`, `extractall(`);
 - `STATUS.md`, `README.md` and `tutorials/README.md` agree on one release-status token and no
   document makes an unsupported release-grade, production-readiness or benchmark claim;
 - `MODEL_CARD.md` front matter, single H1, required heading order, and immutable provenance.
 
-CI also installs the pinned CPU-only `torch`/`torchvision` wheels plus `timm`, runs `ruff` and the
-offline unit suite (`tests/test_pipeline.py`, injected runner, no weights). These are
+CI also installs the pinned CPU-only `torch`/`torchvision` wheels plus `timm`, runs `ruff`, `tools/build_notebook.py --check`, and the
+offline unit suite (`tests/test_pipeline.py`, `tests/test_role_helpers.py`, `tests/test_notebook_parity.py`; injected runner, no weights). These are
 source/provenance and unit checks. They are **not** execution evidence.
 
 ## Executor paths
@@ -40,7 +44,7 @@ source/provenance and unit checks. They are **not** execution evidence.
 | Path | Runtime | Role |
 |---|---|---|
 | Google Colab (supported user path) | Colab CPU runtime (CUDA used automatically when present) | The runtime the tutorial is written for; a clean top-to-bottom run here is promotion evidence |
-| Kaggle CLI kernel | Kaggle CPU kernel, Python 3.12 image | Reproducible clean-room executor of the same class; the notebook is pushed verbatim plus one leading shim cell that provides `google.colab`, sets `DIMER_TUTORIAL_REF`, and chdirs to a scratch directory so the bootstrap clones the candidate |
+| Kaggle CLI kernel | Kaggle CPU kernel, Python 3.12 image | Reproducible clean-room executor of the same class; the notebook is pushed verbatim plus one leading shim cell that provides `google.colab` and chdirs to a scratch directory (no repository checkout is needed — the notebook is standalone) |
 | Local WSL harness (pre-flight only) | Workstation, sequential cell executor with a `google.colab` shim | Builder pre-flight to catch defects before spending cloud runs; **not** a supported runtime and not promotion evidence |
 
 ## Supported release verification procedure
@@ -49,25 +53,29 @@ Before changing the registry status from `Candidate` to `Release-grade`:
 
 1. resolve the exact PR/commit head under review and confirm static CI is green;
 2. open that exact notebook revision in a new CPU (or CUDA) runtime (Colab, or the Kaggle
-   executor above) with `DIMER_TUTORIAL_REF` set to the candidate commit and a clean model cache;
+   executor above) with **no repository checkout** and a clean model cache;
 3. run the notebook top-to-bottom without editing implementation cells (form parameters at their
    defaults for the sample path: `USE_BYOD = False`, `GROUND_TRUTH_INDEX = -1`);
-4. verify that Section 1 reports `repository_revision` equal to the candidate commit and that the
-   installed core package versions equal the `pyproject.toml` pins;
+4. verify that Section 1 reports `NOTEBOOK_SOURCE.repository_revision` equal to the module commit recorded in
+   `metadata.dimer.generated_from` and that the installed core package versions equal the inline `PINS` (= `pyproject.toml`);
 5. verify every default-path stage completes:
-   - fresh bootstrap from GitHub at the candidate revision;
+   - pinned runtime installed from the inline `PINS` with no GitHub access;
+   - the carried module cell executes (defines the pipeline class and helpers) with no import of the repository package;
    - synthetic 256×256 gradient sample generated in code with its RGB SHA-256 printed and the
      ceilings (`NUM_CLASSES` 1000, `MAX_IMAGE_SIDE` 4096, `MAX_BATCH` 64) surfaced;
    - pinned `timm/mobilenetv4_conv_small.e2400_r224_in1k` acquisition at the immutable revision through the package:
-     `stage_missing_files(WEIGHTS_DIR, allow_download=True)` reports `['model.safetensors']` on a
-     clean runtime (the clone carries the manifest and `config.json` only), `verify_snapshot`
-     returns the manifest dict, and `from_pretrained(weights_dir=WEIGHTS_DIR)` reports
+     the inline `MANIFEST` is asserted against the module identity and written to `weights/mobilenetv4-conv-small/`,
+     `stage_missing_files(WEIGHTS_DIR, allow_download=True)` reports all three manifest entries
+     (`README.md`, `config.json`, `model.safetensors`) on a clean runtime, `verify_snapshot` returns the manifest dict, and `from_pretrained(weights_dir=WEIGHTS_DIR)` reports
      `source == 'local-snapshot'`;
    - classification through `predict(image, top_k=5)` with `decision_rule == 'argmax'` and a
      rank-ordered top-5 list;
-   - no metric reported on the synthetic sample (no ground truth), stated as such;
+   - `validate_inputs` writes `outputs/mobilenetv4_classification_input_manifest.json` (verdict `accepted`, one recorded
+     rejection finding from the oversized probe);
+   - `evaluation_report` writes `outputs/mobilenetv4_classification_evaluation_report.json` with verdict `not-measurable`
+     on the synthetic sample (no ground truth), stated as such;
    - `outputs/mobilenetv4_classification_result.json` and `outputs/mobilenetv4_classification_top_k.csv`
-     written with repository SHA, model revision, runtime versions and device;
+     written with `NOTEBOOK_SOURCE`, model revision, model licence, runtime versions and device;
 6. verify the exports exist and the interpretation section matches the observed path;
 7. record the notebook Git blob id, commit, runtime (platform, Python, PyTorch, timm, device),
    model identifier and immutable revision, whether the model cache was clean, outcome, produced
@@ -98,6 +106,8 @@ the candidate revision, which is necessary but not sufficient. The registry stat
 **Candidate** until a reviewer confirms a recorded run against the notebook blob under review and
 an integrator promotes it; promotion is not performed by the builder. Two facts a reviewer should
 weigh: `stage_missing_files` was exercised only with an injected downloader in the unit suite (the
-real `hf_hub_download` fetch into the snapshot directory has not been executed), and the local
-smoke run used the verified snapshot on CUDA, so the clean run will be the first execution of the
-notebook's staging path and of the CPU inference path against the real weights.
+real `hf_hub_download` fetch of all three manifest entries into a fresh `weights/mobilenetv4-conv-small/` has not been
+executed), and the standalone carrier itself — executing the carried module cell in a runtime that has no
+repository checkout — has been validated statically only (parity PASS), never run; the earlier local smoke run
+used the verified snapshot through the installed package, so the clean run will be the first execution
+of the standalone path, of the staging path, and of the CPU inference path against the real weights.
