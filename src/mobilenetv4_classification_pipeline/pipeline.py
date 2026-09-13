@@ -312,24 +312,27 @@ class MobileNetV4ClassificationPipeline:
 
         return cls(runner, transform, resolved_device, labels, source)
 
+    @classmethod
     def fit(
-        self,
+        cls,
         train_images: Sequence[Image.Image],
         train_targets: Sequence[int],
         val_images: Sequence[Image.Image] | None = None,
         val_targets: Sequence[int] | None = None,
         class_names: Sequence[str] | None = None,
+        *,
         epochs: int = 1,
         batch_size: int = 4,
         learning_rate: float = 1e-4,
         device: str | None = None,
         weights_dir: str | Path | None = None,
         output_dir: str | Path | None = None,
+        allow_download: bool = False,
     ) -> tuple[MobileNetV4ClassificationPipeline, dict[str, Any]]:
         """Fine-tune the classification head in-kernel with AdamW and cross-entropy loss."""
         import timm
         import torch
-        from safetensors.torch import load_file, save_file
+        from safetensors.torch import save_file
         from timm.data import create_transform, resolve_model_data_config
 
         if len(train_images) != len(train_targets):
@@ -339,20 +342,40 @@ class MobileNetV4ClassificationPipeline:
 
         unique_targets = sorted(set(train_targets))
         num_classes = len(class_names) if class_names is not None else len(unique_targets)
+        if num_classes < 2:
+            raise ValueError(f"classification requires at least 2 classes, got {num_classes}")
         labels = tuple(class_names) if class_names is not None else tuple(str(i) for i in range(num_classes))
 
         arch_name = MODEL_ID.split("/", 1)[1]
-        model = timm.create_model(arch_name, pretrained=False, num_classes=num_classes)
-
         root = Path(weights_dir or DEFAULT_WEIGHTS_DIR)
-        weights_path = root / WEIGHTS_FILE
-        if weights_path.is_file():
-            base_state = load_file(weights_path)
-            backbone_weights = {
-                k: v for k, v in base_state.items()
-                if not k.startswith("classifier.")
-            }
-            model.load_state_dict(backbone_weights, strict=False)
+
+        if (root / MANIFEST_NAME).is_file():
+            stage_missing_files(root, allow_download=allow_download)
+            verify_snapshot(root)
+            with open(root / CONFIG_FILE, encoding="utf-8") as fh:
+                config = json.load(fh)
+            snapshot_name = f"{config['architecture']}.{config['pretrained_cfg']['tag']}"
+            if snapshot_name != arch_name:
+                raise ValueError(f"snapshot config names {snapshot_name!r}, expected {arch_name!r}")
+            overlay = dict(config["pretrained_cfg"])
+            overlay["file"] = str(root / WEIGHTS_FILE)
+            model = timm.create_model(
+                arch_name,
+                pretrained=True,
+                pretrained_cfg_overlay=overlay,
+                num_classes=num_classes,
+            )
+        elif allow_download:
+            model = timm.create_model(
+                _hub_reference(MODEL_ID, revision=MODEL_REVISION),
+                pretrained=True,
+                num_classes=num_classes,
+            )
+        else:
+            raise FileNotFoundError(
+                f"no verified snapshot at {root} and allow_download=False; "
+                f"stage it with: hf download {MODEL_ID} --revision {MODEL_REVISION} --local-dir {root}"
+            )
 
         resolved_device = device or ("cuda:0" if torch.cuda.is_available() else "cpu")
         model = model.to(resolved_device)
