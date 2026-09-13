@@ -358,7 +358,7 @@ TEMPLATE = {
                 "val_hits = 0\n"
                 "per_class_stats = {{cls_name: {{'total': 0, 'correct': 0}} for cls_name in CUSTOM_CLASSES}}\n\n"
                 "for img, true_label in zip(val_images, val_labels):\n"
-                "    pred_out = reloaded_pipe.predict(img, top_k=min(2, len(CUSTOM_CLASSES)))\n"
+                "    pred_out = reloaded_pipe.predict(img)\n"
                 "    pred = pred_out['predictions'][0]\n"
                 "    is_correct = (pred['predicted_label'] == true_label)\n"
                 "    if is_correct:\n"
