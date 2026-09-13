@@ -1,6 +1,6 @@
 """Static release-asset validation for the MobileNetV4-Conv-Small classification DIMER pipeline.
 
-Checks the STANDALONE tutorial notebook (DIMER Notebook Specification 2.0 §3.6), the tutorial
+Checks the STANDALONE tutorial notebook (DIMER Notebook Specification 2.0 §4), the tutorial
 registry, model card, README, STATUS.md and weight documentation for source conformance and
 cross-document identity consistency, and runs the generator parity checks (PAR1–PAR3).
 
@@ -104,7 +104,7 @@ UNSUPPORTED_CLAIMS = re.compile(
     re.I,
 )
 REQUIRED_CARD_HEADINGS = [
-    (6, "Description"),
+    (4, "Description"),
     (4, "Intended Use and Limitations"),
     (6, "Primary Intended Uses"),
     (6, "Primary Intended Users"),
@@ -148,7 +148,10 @@ COMMON_CODE_MARKERS = (
     "files.upload()",
 )
 COMMON_MARKDOWN_MARKERS = (
-    f"**Notebook specification:** DIMER Notebook Specification {NOTEBOOK_SPEC} — **standalone** (§3.6)",
+    f"**Notebook specification:** DIMER Notebook Specification {NOTEBOOK_SPEC} — **standalone** (§4)",
+    "**Mode:** `",
+    "**Run all:**",
+    "**Bring Your Own Data:**",
     "**This notebook is standalone.**",
     "**Learning objectives:**",
     "## Prerequisites",
@@ -346,6 +349,7 @@ def _validate_notebook_structure(path: Path, notebook: dict) -> tuple[list[tuple
     _check(profile == EXPECTED_PROFILE, f"{path.name}: profile {profile!r} != declared {EXPECTED_PROFILE!r}")
     spec = dimer.get("notebook_spec", dimer.get("notebook_spec_version"))
     _check(spec == NOTEBOOK_SPEC, f"{path.name}: metadata.dimer must declare notebook spec version '{NOTEBOOK_SPEC}'")
+    _check(dimer.get("notebook_mode") in ("REFERENCE", "GUIDED", "WORKSHOP"), f"{path.name}: metadata.dimer.notebook_mode must declare a §3.3 pedagogical mode")
     _check(dimer.get("standalone") is True, f"{path.name}: metadata.dimer.standalone must be true (ST6)")
     generated = dimer.get("generated_from")
     _check(isinstance(generated, dict), f"{path.name}: metadata.dimer.generated_from is required (ST5)")
