@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate a STANDALONE DIMER tutorial notebook (NOTEBOOK_SPEC 1.1 §3.6) from repository sources — /2.
+"""Generate a STANDALONE DIMER tutorial notebook (NOTEBOOK_SPEC 2.0 §3.6) from repository sources — /2.
 
 /2 adds to /1: multi-module packages (one tagged cell per module, topologically ordered, package-relative
 imports removed), template-declared rewrite rules, and extra pinned snapshots (`extra_weights`) for packages
@@ -28,7 +28,7 @@ from pathlib import Path
 from typing import Any
 
 GENERATOR_VERSION = "build_notebook.py/2"
-NOTEBOOK_SPEC = "1.1"
+NOTEBOOK_SPEC = "2.0"
 
 # ST2: default rewrite rule; a template may replace it with its own `rewrites` list. Every rule must
 # match exactly once across the embedded modules, so a silent no-op is impossible.
