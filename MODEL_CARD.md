@@ -61,7 +61,7 @@ ImageNet-1k images were collected from web image searches (Deng et al., 2009) an
 
 ###### Environment
 
-Operating environment: Python 3.12 with `torch==2.14.0`, `torchvision==0.29.0`, `timm==1.0.29`, `pillow==11.3.0` (exact pins in `pyproject.toml`). CUDA is optional; `from_pretrained` picks `cuda:0` when available, else CPU, and runs in float32 on both. Measured on this repository's smoke runs (claude-science WSL venv, one synthetic 256×256 image through `MobileNetV4ClassificationPipeline.from_pretrained(device=...).predict`): on **CPU** (Intel Core Ultra 9 275HX, 24 logical processors visible to WSL, float32, no thread pinning) loading the verified snapshot took 1.90 s and one prediction 0.19 s including transform and first call; on the RTX 5070 Ti the same load took 2.01 s and the first prediction 0.84 s, dominated by CUDA warm-up — for this model a GPU is not needed. Data environment: inputs are assumed to be natural photographs whose subject is one of the 1000 classes, framed roughly as in ImageNet; line drawings, medical scans, satellite tiles, heavy occlusion or unusual viewpoints fall outside that assumption and degrade accuracy in ways the pipeline does not measure.
+Operating environment: Python 3.12 with `torch==2.14.0`, `torchvision==0.29.0`, `torchaudio==2.11.0`, `timm==1.0.29`, `pillow==11.3.0` (exact pins in `pyproject.toml`). CUDA is optional; `from_pretrained` picks `cuda:0` when available, else CPU, and runs in float32 on both. Measured on this repository's smoke runs (claude-science WSL venv, one synthetic 256×256 image through `MobileNetV4ClassificationPipeline.from_pretrained(device=...).predict`): on **CPU** (Intel Core Ultra 9 275HX, 24 logical processors visible to WSL, float32, no thread pinning) loading the verified snapshot took 1.90 s and one prediction 0.19 s including transform and first call; on the RTX 5070 Ti the same load took 2.01 s and the first prediction 0.84 s, dominated by CUDA warm-up — for this model a GPU is not needed. Data environment: inputs are assumed to be natural photographs whose subject is one of the 1000 classes, framed roughly as in ImageNet; line drawings, medical scans, satellite tiles, heavy occlusion or unusual viewpoints fall outside that assumption and degrade accuracy in ways the pipeline does not measure.
 
 #### Metrics
 
@@ -117,7 +117,7 @@ The pipeline must not be used for surveillance, biometric or demographic profili
 
 ## Runtime
 
-- Pins: `torch==2.14.0`, `torchvision==0.29.0`, `timm==1.0.29`, `huggingface-hub==0.36.2`, `safetensors==0.8.0`, `numpy==2.5.3`, `pillow==11.3.0`; Python 3.12.
+- Pins: `torch==2.14.0`, `torchvision==0.29.0`, `torchaudio==2.11.0`, `timm==1.0.29`, `huggingface-hub==0.36.2`, `safetensors==0.8.0`, `numpy==2.5.3`, `pillow==11.3.0`; Python 3.12.
 - Precision: float32 on both CPU and CUDA; preprocessing resize 256 → centre-crop 224, bicubic, ImageNet mean/std from the snapshot `config.json` (`crop_pct` 0.875; the 256-px `test_input_size` is not used).
 - Measured, CPU (claude-science WSL venv, Intel Core Ultra 9 275HX, `HF_HUB_OFFLINE=1`, `device="cpu"`): load 1.90 s, predict 0.19 s, total 2.08 s, top-1 on a synthetic 256×256 gradient image `nipple` (index 680) at score 0.0248.
 - Measured, CUDA (same venv, RTX 5070 Ti, separate process): load 2.01 s, predict 0.84 s (first-call warm-up), total 2.85 s, same top-5 ordering, top-1 score 0.0246.
