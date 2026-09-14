@@ -7,7 +7,7 @@ date_published: "2024-06-16"
 date_published_source: "Hugging Face Hub repository creation date of the exact hosted checkpoint (`createdAt`, https://huggingface.co/api/models/timm/mobilenetv4_conv_small.e2400_r224_in1k)"
 ---
 
-# MobileNetV4-Conv-Small e2400_r224_in1k (DIMER package v0.1.0) — Image Classification
+# MobileNetV4-Conv-Small e2400_r224_in1k — Image Classification
 
 [![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-timm%2Fmobilenetv4__conv__small.e2400__r224__in1k-ffcc4d?style=flat)](https://huggingface.co/timm/mobilenetv4_conv_small.e2400_r224_in1k)
 [![Upstream GitHub](https://img.shields.io/badge/Upstream%20GitHub-huggingface%2Fpytorch--image--models-181717?style=flat&logo=github&logoColor=white)](https://github.com/huggingface/pytorch-image-models)
