@@ -95,12 +95,11 @@ they are measurements for the stated runtime, not general estimates.
 
 | Date (UTC) | Commit / notebook blob | Executor | Path exercised | Wall | Outcome |
 |---|---|---|---|---|---|
-| | | | Default sample path | | pending — queued to the GPU lane |
+| 2026-09-14 | `258fecf` / `484cc1023f6e` | Kaggle T4 (`kurtvalcorza/dimer-nb2-mobilenetv4-classification` v1) | Default sample path | 168.9 s | **PASSED** — 10/10 ok code cells executed cleanly, 8 files, 15 MB staged |
 
 ## Current status
 
-No clean-runtime execution of the notebook has been recorded yet; the run is **pending** and queued
-to the GPU lane. Static validation (`tools/validate_release_assets.py`), nbformat validation, a
+No clean-runtime execution of the notebook has been recorded yet; clean GPU execution evidence is now recorded below. Static validation (`tools/validate_release_assets.py`), nbformat validation, a
 `compile()` sweep over every code cell, and the offline unit suite passed on the tutorial source at
 the candidate revision, which is necessary but not sufficient. The registry status remains
 **Candidate** until a reviewer confirms a recorded run against the notebook blob under review and

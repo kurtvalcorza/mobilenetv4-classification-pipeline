@@ -12,6 +12,25 @@ TEMPLATE = {
     "stem": "mobilenetv4_classification",
     "notebook_name": "mobilenetv4_classification_colab.ipynb",
     "profile": "E2E",
+    "mode": "GUIDED",
+    "run_all": (
+        "Selecting **Run all** in a fresh supported runtime installs the pinned dependencies, stages and digest-verifies the pinned "
+        "snapshot, generates the deterministic synthetic sample image, validates it into an input manifest, classifies it with the "
+        "pretrained head, writes the zero-shot evaluation report, downloads and digest-verifies the `Cleanlab/cifar-10-subset` tutorial "
+        "dataset (a balanced per-class subset with a seeded 80/20 split), performs a bounded in-kernel fine-tuning run of a new "
+        "classification head with AdamW and cross-entropy, exports the artifact (`model.safetensors` + `model-config.json`), reloads it "
+        "from disk across a fresh boundary and evaluates the reloaded model on the held-out split against a majority-class baseline, "
+        "and writes outputs and provenance. No repository clone, DIMER worker or service, credential, upload dialog or configuration "
+        "edit is required (NOTEBOOK_SPEC 2.0 §5)."
+    ),
+    "byod": (
+        "Two optional branches, both off by default and never part of the default path: `USE_BYOD = True` in Section 4 uploads one "
+        "image that passes through the same validation, classification, evaluation-report and export cells as the synthetic sample; "
+        "`USE_BYOD_DATASET = True` in Section 8 uploads a `.zip` of class folders (or `train/` and `val/` directories) that enters the "
+        "same validation, seeded split, in-kernel fine-tuning, export, fresh-reload and held-out evaluation cells as the tutorial "
+        "dataset. Expected formats, limits and privacy guidance are stated in the Prerequisites and in those cells; uploads stay "
+        "inside this runtime."
+    ),
     "pipeline_class": "MobileNetV4ClassificationPipeline",
     "weights_key": "mobilenetv4-conv-small",
     "runtime_imports": ["torch", "timm"],
