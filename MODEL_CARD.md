@@ -42,7 +42,7 @@ The task is single-label image classification: input one PIL image or a batch of
 
 ###### Primary Intended Users
 
-The intended users are machine-learning engineers, data scientists and application developers integrating a small classifier into research prototypes, edge or CPU deployments, or the DIMER model workbench. The pipeline assumes its users understand that the label space is fixed to the 1000 ImageNet-1k classes, that a softmax score is not a calibrated probability, that a 3.8 M-parameter model trades accuracy for speed (upstream 73.8 % top-1 versus 80–84 % for the sibling ResNet-50 and ConvNeXt pipelines), and that any deployment on their own data needs a labelled evaluation set. It is not designed for hobbyist "point and trust" use.
+The intended users are machine-learning engineers, data scientists and application developers integrating a small classifier into research prototypes or edge and CPU deployments. The pipeline assumes its users understand that the label space is fixed to the 1000 ImageNet-1k classes, that a softmax score is not a calibrated probability, that a 3.8 M-parameter model trades accuracy for speed (upstream 73.8 % top-1 versus 80–84 % for the sibling ResNet-50 and ConvNeXt pipelines), and that any deployment on their own data needs a labelled evaluation set. It is not designed for hobbyist "point and trust" use.
 
 ###### Out-of-scope use cases
 
