@@ -19,7 +19,8 @@ CI runs `tools/validate_release_assets.py`, which checks:
   primary path; exactly one cell tagged `embedded_module` equal to `src/mobilenetv4_classification_pipeline/pipeline.py`
   after the generator's documented rewrites; the inline `MANIFEST` equal to the committed snapshot manifest and the
   inline `PINS` equal to the `pyproject.toml` runtime pins; the notebook byte-identical to `tools/build_notebook.py`
-  output; the pinned-install cell with its restart-on-stale-import guard; `NOTEBOOK_SOURCE` recorded in exports;
+  output; the single kernel cell that builds (or reuses, by lock digest) the isolated hash-locked uv environment and routes
+  every later cell to it, with no `pip install` into the kernel and no restart request; `NOTEBOOK_SOURCE` recorded in exports;
 - `MODEL_ID`/`MODEL_REVISION` are bound only in the carried module cell (and repeated in the inline manifest,
   which the notebook asserts against the module before fetching), the revision is a 40-hex immutable commit, and the same identity string appears in `README.md`,
   `MODEL_CARD.md`, and `docs/WEIGHTS.md` with no stray revisions;
