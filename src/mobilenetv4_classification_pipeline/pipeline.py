@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import random
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -321,24 +322,97 @@ class MobileNetV4ClassificationPipeline:
         val_targets: Sequence[int] | None = None,
         class_names: Sequence[str] | None = None,
         *,
-        epochs: int = 1,
-        batch_size: int = 4,
-        learning_rate: float = 1e-4,
+        epochs: int = 8,
+        batch_size: int = 8,
+        learning_rate: float = 1e-3,
+        trainable: str = "head",
+        seed: int | None = 42,
+        shuffle: bool = True,
+        head_init: str = "zeros",
         device: str | None = None,
         weights_dir: str | Path | None = None,
         output_dir: str | Path | None = None,
         allow_download: bool = False,
     ) -> tuple[MobileNetV4ClassificationPipeline, dict[str, Any]]:
-        """Fine-tune the classification head in-kernel with AdamW and cross-entropy loss."""
-        import timm
+        """Adapt the pinned model to ``class_names`` in-kernel with AdamW and cross-entropy loss.
+
+        ``trainable="head"`` (default) trains only the new linear classifier: every backbone parameter is
+        frozen and the network stays in eval mode, so BatchNorm statistics are never updated by tiny batches.
+        ``trainable="all"`` trains every parameter in train mode (full fine-tuning). The new head starts at
+        zero when ``head_init="zeros"`` (initial loss exactly ``ln(num_classes)``, no confidently wrong start)
+        or at timm's random init when ``head_init="default"``. ``seed`` seeds the head initialisation and the
+        shuffled batch order (``shuffle=True``), so two fits on the same data give identical predictions.
+
+        The returned metadata records the method, the hyperparameters, the step count, the seed and the
+        trainable/frozen parameter counts; the same ``fine_tuning`` block is written to ``model-config.json``.
+        """
         import torch
-        from safetensors.torch import save_file
-        from timm.data import create_transform, resolve_model_data_config
 
         if len(train_images) != len(train_targets):
             raise ValueError("train_images and train_targets must have the same length")
         if not train_images:
             raise ValueError("train_images must not be empty")
+        if trainable not in ("head", "all"):
+            raise ValueError(f"trainable must be 'head' or 'all', got {trainable!r}")
+        if head_init not in ("zeros", "default"):
+            raise ValueError(f"head_init must be 'zeros' or 'default', got {head_init!r}")
+        if epochs < 1 or batch_size < 1:
+            raise ValueError("epochs and batch_size must be at least 1")
+        # timm's training transform (random resized crop) draws from Python's `random`, the flip and the
+        # head initialisation from torch's global generator: both are seeded here, and Python's state is
+        # restored afterwards.
+        random_state = random.getstate()
+        if seed is not None:
+            torch.manual_seed(seed)
+            random.seed(seed)
+        try:
+            return cls._fit(
+                train_images,
+                train_targets,
+                val_images,
+                val_targets,
+                class_names,
+                epochs=epochs,
+                batch_size=batch_size,
+                learning_rate=learning_rate,
+                trainable=trainable,
+                seed=seed,
+                shuffle=shuffle,
+                head_init=head_init,
+                device=device,
+                weights_dir=weights_dir,
+                output_dir=output_dir,
+                allow_download=allow_download,
+            )
+        finally:
+            random.setstate(random_state)
+
+    @classmethod
+    def _fit(
+        cls,
+        train_images: Sequence[Image.Image],
+        train_targets: Sequence[int],
+        val_images: Sequence[Image.Image] | None,
+        val_targets: Sequence[int] | None,
+        class_names: Sequence[str] | None,
+        *,
+        epochs: int,
+        batch_size: int,
+        learning_rate: float,
+        trainable: str,
+        seed: int | None,
+        shuffle: bool,
+        head_init: str,
+        device: str | None,
+        weights_dir: str | Path | None,
+        output_dir: str | Path | None,
+        allow_download: bool,
+    ) -> tuple[MobileNetV4ClassificationPipeline, dict[str, Any]]:
+        import timm
+        import torch
+        from safetensors.torch import save_file
+        from timm.data import create_transform, resolve_model_data_config
+
 
         unique_targets = sorted(set(train_targets))
         num_classes = len(class_names) if class_names is not None else len(unique_targets)
@@ -380,18 +454,42 @@ class MobileNetV4ClassificationPipeline:
         resolved_device = device or ("cuda:0" if torch.cuda.is_available() else "cpu")
         model = model.to(resolved_device)
 
+        head = model.get_classifier()
+        if head_init == "zeros":
+            with torch.no_grad():
+                for parameter in head.parameters():
+                    parameter.zero_()
+        head_parameters = {id(parameter) for parameter in head.parameters()}
+        for parameter in model.parameters():
+            parameter.requires_grad_(trainable == "all" or id(parameter) in head_parameters)
+        trainable_count = sum(p.numel() for p in model.parameters() if p.requires_grad)
+        total_count = sum(p.numel() for p in model.parameters())
+
         data_config = resolve_model_data_config(model)
         train_transform = create_transform(**data_config, is_training=True)
         eval_transform = create_transform(**data_config, is_training=False)
 
-        optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
+        optimizer = torch.optim.AdamW(
+            [parameter for parameter in model.parameters() if parameter.requires_grad], lr=learning_rate
+        )
         criterion = torch.nn.CrossEntropyLoss()
+        generator = torch.Generator()
+        generator.manual_seed(seed if seed is not None else torch.seed() % (2**63))
 
         history: list[dict[str, Any]] = []
+        steps = 0
 
         for epoch in range(epochs):
-            model.train()
-            indices = list(range(len(train_images)))
+            # Head-only adaptation keeps the whole network in eval mode: the frozen BatchNorm layers keep the
+            # pretrained running statistics instead of being overwritten by batch statistics of a few images.
+            if trainable == "all":
+                model.train()
+            else:
+                model.eval()
+            if shuffle:
+                indices = torch.randperm(len(train_images), generator=generator).tolist()
+            else:
+                indices = list(range(len(train_images)))
             running_loss = 0.0
             total_samples = 0
 
@@ -409,6 +507,7 @@ class MobileNetV4ClassificationPipeline:
                 loss = criterion(logits, batch_labels)
                 loss.backward()
                 optimizer.step()
+                steps += 1
 
                 running_loss += loss.item() * len(batch_idx)
                 total_samples += len(batch_idx)
@@ -442,6 +541,30 @@ class MobileNetV4ClassificationPipeline:
             history.append(epoch_record)
 
         model.eval()
+        for parameter in model.parameters():
+            parameter.requires_grad_(False)
+
+        fine_tuning: dict[str, Any] = {
+            "method": "head-only linear probe on frozen backbone features"
+            if trainable == "head"
+            else "full fine-tuning of every parameter",
+            "trainable": trainable,
+            "optimizer": "AdamW",
+            "learning_rate": learning_rate,
+            "loss": "cross-entropy",
+            "epochs": epochs,
+            "steps": steps,
+            "batch_size": batch_size,
+            "shuffle": shuffle,
+            "seed": seed,
+            "head_init": head_init,
+            "batchnorm_mode": "train" if trainable == "all" else "eval (running statistics frozen)",
+            "train_augmentation": "timm is_training=True transform (random resized crop, flip)",
+            "trainable_parameters": int(trainable_count),
+            "frozen_parameters": int(total_count - trainable_count),
+            "total_parameters": int(total_count),
+            "train_samples": len(train_images),
+        }
 
         if output_dir:
             out_path = Path(output_dir)
@@ -454,6 +577,7 @@ class MobileNetV4ClassificationPipeline:
                 "fine_tuned": True,
                 "base_model": MODEL_ID,
                 "base_revision": MODEL_REVISION,
+                "fine_tuning": fine_tuning,
             }
             with open(out_path / "model-config.json", "w", encoding="utf-8") as fh:
                 json.dump(config_payload, fh, indent=2)
@@ -469,7 +593,12 @@ class MobileNetV4ClassificationPipeline:
             labels,
             source="fine-tuned",
         )
-        return fitted_pipe, {"history": history, "num_classes": num_classes, "class_names": list(labels)}
+        return fitted_pipe, {
+            "history": history,
+            "num_classes": num_classes,
+            "class_names": list(labels),
+            "fine_tuning": fine_tuning,
+        }
 
     def _validate(self, images: Any, top_k: int) -> list[Image.Image]:
         max_classes = len(self.labels) if self.labels else NUM_CLASSES

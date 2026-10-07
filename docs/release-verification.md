@@ -19,7 +19,8 @@ CI runs `tools/validate_release_assets.py`, which checks:
   primary path; exactly one cell tagged `embedded_module` equal to `src/mobilenetv4_classification_pipeline/pipeline.py`
   after the generator's documented rewrites; the inline `MANIFEST` equal to the committed snapshot manifest and the
   inline `PINS` equal to the `pyproject.toml` runtime pins; the notebook byte-identical to `tools/build_notebook.py`
-  output; the pinned-install cell with its restart-on-stale-import guard; `NOTEBOOK_SOURCE` recorded in exports;
+  output; the single kernel cell that builds (or reuses, by lock digest) the isolated hash-locked uv environment and routes
+  every later cell to it, with no `pip install` into the kernel and no restart request; `NOTEBOOK_SOURCE` recorded in exports;
 - `MODEL_ID`/`MODEL_REVISION` are bound only in the carried module cell (and repeated in the inline manifest,
   which the notebook asserts against the module before fetching), the revision is a 40-hex immutable commit, and the same identity string appears in `README.md`,
   `MODEL_CARD.md`, and `docs/WEIGHTS.md` with no stray revisions;
@@ -97,9 +98,21 @@ they are measurements for the stated runtime, not general estimates.
 |---|---|---|---|---|---|
 | 2026-09-14 | `258fecf` / `484cc1023f6e` | Kaggle T4 (`kurtvalcorza/dimer-nb2-mobilenetv4-classification` v1) | Default sample path | 168.9 s | **PASSED** — 10/10 ok code cells executed cleanly, 8 files, 15 MB staged |
 
+### Hosted Colab CLI runs (isolated environment)
+
+Executor: Colab CLI 0.7.4 sequential execution (`colab exec -f`) on a fresh Colab Tesla T4 VM, driven by the
+workspace serial suite, which fetches the notebook byte-exact at the commit and refuses it unless its Git blob matches.
+This is not a browser Run all: the executed file carries no execution counts, and cell order is evidenced by
+`exec.log` ("Executing cell k/N"). Only the default path ran; the upload/BYOD branches (`USE_BYOD`,
+`USE_BYOD_DATASET`) and the optional "Change one thing" activity were not exercised.
+
+| Date (UTC) | Commit / notebook blob | Executor | Path exercised | Wall | Outcome |
+|---|---|---|---|---|---|
+| 2026-10-07 | `a8a888d` / `b622b4fb0c2c` (generator /2.2: fleet-sweep and MNV review fixes, worker `google.colab` stubs with module specs) | Colab CLI 0.7.4 sequential execution, fresh Colab Tesla T4 (session `suite-mobilenetv4-a8a888d-b032`) | Default path, `USE_BYOD = False`, `USE_BYOD_DATASET = False`, `TRAINABLE = "head"`: isolated env (45 locked packages, Python 3.12.12, built in 60 s, `reused: False`; kernel Python 3.13.15); worker routed (`worker_reused: False`); snapshot staged and digest-verified, `source == 'local-snapshot'` on `cuda:0`; synthetic gradient → `spotlight, spot` (index 818, score 0.0322), input manifest `accepted` with the oversized probe `rejected`, evaluation report `not-measurable`; `Cleanlab/cifar-10-subset` digest matched, 160 train / 40 held-out images (`frog`, `truck`); head-only fit, 2,562 trainable / 2,493,024 frozen parameters, 160 AdamW steps at 1e-3 in 7.2 s, training loss 0.384 → 0.084 (below ln 2); reload equivalence max score difference 0.0; held-out 39/40 = 97.5 % (95 % Wilson 87.1–99.6 %), majority baseline 50.0 %, zero-shot reference 100.0 %, verdict `above-majority-baseline`, below the zero-shot reference; 7 outputs written. Code cell 3 (carried module) prints nothing by design | 100.5 s | **PASSED** — 11/11 code cells in one pass, no restart, 0 error outputs; code-cell sources identical to the blob. Evidence: `docs/execution-evidence/2026-10-07-a8a888d/` — `mobilenetv4_classification_colab_a8a888d_colab-cli-t4.ipynb` (SHA-256 `087cea03e30fd5c8ed826e5704ef8e253e591a1c677aa442724e215d73f10037`), `run_summary.json` (`8fb38779ef3adf8d5d086f3070f42a9376f4aa04de5c766f74bfea322766a786`), `exec.log` (`ac19b7c451a52c07dd4753dc0127f3b3fd283772528ad231c7e9593353ecf3d3`) |
+
 ## Current status
 
-No clean-runtime execution of the notebook has been recorded yet; clean GPU execution evidence is now recorded below. Static validation (`tools/validate_release_assets.py`), nbformat validation, a
+The current blob `b622b4fb0c2c` (commit `a8a888d`) passed a Colab CLI 0.7.4 sequential execution on a fresh Colab Tesla T4 (2026-10-07, 11/11 code cells, one pass, no restart, 0 errors, 100.5 s; held-out 97.5 % against a 50 % majority baseline and a 100 % zero-shot reference; see "Hosted Colab CLI runs"). It exercised the default path only, not a browser Run all; the BYOD branches and the optional activity have not been executed in any record. The earlier Kaggle T4 run of blob `484cc1023f6e` predates the isolated environment and the review fixes. Static validation (`tools/validate_release_assets.py`), nbformat validation, a
 `compile()` sweep over every code cell, and the offline unit suite passed on the tutorial source at
 the candidate revision, which is necessary but not sufficient. The registry status remains
 **Candidate** until a reviewer confirms a recorded run against the notebook blob under review and
