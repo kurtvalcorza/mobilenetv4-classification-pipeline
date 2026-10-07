@@ -50,7 +50,7 @@ CODE_MARKERS = (
     "targets = None if ground_truth is None else [ground_truth]",
     "print({'ceilings': {'NUM_CLASSES': NUM_CLASSES, 'MAX_IMAGE_SIDE': MAX_IMAGE_SIDE, 'MAX_BATCH': MAX_BATCH}})",
     "GROUND_TRUTH_INDEX = -1",
-    "image = Image.fromarray(array, mode='RGB')",
+    "image = Image.fromarray(array)",
     "hashlib.sha256(np.asarray(image.convert('RGB')).tobytes()).hexdigest()",
     "result['decision_rule']",
     "writer.writerow(['image', 'rank', 'index', 'label', 'score'])",

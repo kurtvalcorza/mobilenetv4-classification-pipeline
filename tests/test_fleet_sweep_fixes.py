@@ -278,11 +278,16 @@ def _zip(entries: dict[str, bytes]) -> bytes:
     return buf.getvalue()
 
 
+_PNG_COUNTER = [0]
+
+
 def _png() -> bytes:
+    """A distinct 8x8 PNG on every call (Section 8 removes pixel-identical duplicates before splitting)."""
     from PIL import Image
 
+    _PNG_COUNTER[0] += 1
     buf = io.BytesIO()
-    Image.new("RGB", (8, 8), (1, 2, 3)).save(buf, format="PNG")
+    Image.new("RGB", (8, 8), (_PNG_COUNTER[0] % 256, 2, 3)).save(buf, format="PNG")
     return buf.getvalue()
 
 
@@ -298,12 +303,11 @@ def _run_dataset(nb: dict, archive: bytes) -> dict:
 
 def test_swp_b_dataset_split_counts_and_reports_skipped_members(nb: dict) -> None:
     """SWP-B: the true minimum (2 classes x 2 images) is accepted, unused members are counted, not dropped silently."""
-    png = _png()
-    ns = _run_dataset(nb, _zip({"cats/a.png": png, "cats/b.png": png, "dogs/c.png": png, "dogs/d.png": png, "notes.txt": b"x"}))
+    ns = _run_dataset(nb, _zip({"cats/a.png": _png(), "cats/b.png": _png(), "dogs/c.png": _png(), "dogs/d.png": _png(), "notes.txt": b"x"}))
     assert ns["CUSTOM_CLASSES"] == ["cats", "dogs"]
     assert (len(ns["train_images"]), len(ns["val_images"])) == (2, 2)
-    assert ns["skipped"] == {"not_an_image": 1, "val_class_not_in_train": 0}
-    ns = _run_dataset(nb, _zip({"train/a/1.png": png, "train/b/2.png": png, "val/a/3.png": png, "val/c/4.png": png}))
+    assert ns["skipped"] == {"not_an_image": 1, "val_class_not_in_train": 0, "pixel_duplicate": 0}
+    ns = _run_dataset(nb, _zip({"train/a/1.png": _png(), "train/b/2.png": _png(), "val/a/3.png": _png(), "val/c/4.png": _png()}))
     assert ns["skipped"]["val_class_not_in_train"] == 1 and len(ns["val_images"]) == 1
 
 
@@ -319,8 +323,7 @@ def test_swp_b_dataset_split_counts_and_reports_skipped_members(nb: dict) -> Non
 )
 def test_swp_b_dataset_refusals_name_the_rule(nb: dict, entries: dict, match: str) -> None:
     """SWP-B: each refusal is a ValueError naming the class, member or rule (no KeyError/StopIteration/NameError)."""
-    png = _png()
-    archive = _zip({k: (png if v == b"P" else v) for k, v in entries.items()})
+    archive = _zip({k: (_png() if v == b"P" else v) for k, v in entries.items()})
     with pytest.raises(ValueError, match=match):
         _run_dataset(nb, archive)
 
