@@ -384,3 +384,41 @@ def test_mnv_m1_no_restart_and_every_cell_parses(nb: dict) -> None:
         ast.parse(source, f"cell{i}")
     md = _markdown(nb)
     assert "{{" not in md and re.search(r"\{MODEL_ID\}|@P:", md) is None
+
+
+@pytest.mark.parametrize("real_google", [False, True])
+def test_worker_colab_stubs_have_specs(nb: dict, real_google: bool, monkeypatch: pytest.MonkeyPatch) -> None:
+    """The isolated worker's google.colab stubs must carry a module spec: on Colab, accelerate/transformers call
+    importlib.util.find_spec("google.colab"), which raised `google.colab.__spec__ is None` on a spec-less stub
+    (language-model-pipeline T4 run of f2053aa; reference fixes language-model-pipeline d185817 and
+    chronos-2-forecasting-pipeline 33a2f53)."""
+    import importlib.util
+    import os
+    import sys
+
+    router = _cell_with(nb, '_WORKER_SOURCE = r"""')
+    worker = router[router.index('_WORKER_SOURCE = r"""') + len('_WORKER_SOURCE = r"""') :]
+    worker = worker[: worker.index('"""')]
+    start = worker.index('if os.environ.get("DIMER_KERNEL_IS_COLAB") == "1":')
+    shim = worker[start : worker.index('_main = types.ModuleType("__main__")', start)]
+    names = ("google", "google.colab", "google.colab.files")
+    saved = {n: sys.modules[n] for n in names if n in sys.modules}
+    fake_google = types.ModuleType("google")
+    fake_google.__path__ = []
+    try:
+        for n in names:
+            sys.modules.pop(n, None)
+        # Both branches: no importable `google` (stub created) and an existing namespace package.
+        sys.modules["google"] = fake_google if real_google else None
+        monkeypatch.setenv("DIMER_KERNEL_IS_COLAB", "1")
+        exec(compile(shim, "worker-colab-shim", "exec"), {"os": os, "sys": sys, "types": types, "_send": None, "_recv": None})
+        for n in ("google.colab", "google.colab.files"):
+            spec = importlib.util.find_spec(n)  # raised ValueError before the fix
+            assert spec is not None and spec.name == n
+        assert sys.modules["google.colab"].__path__ == [] and callable(sys.modules["google.colab.files"].upload)
+        if not real_google:
+            assert importlib.util.find_spec("google") is not None
+    finally:
+        for n in names:
+            sys.modules.pop(n, None)
+        sys.modules.update(saved)
