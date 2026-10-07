@@ -1,0 +1,130 @@
+[colab] Parsing notebook '/home/kurt/colab-runs/mobilenetv4-classification-pipeline-a8a888d-b032d3/mobilenetv4_classification_colab_a8a888d_colab-cli-t4.ipynb'...
+[colab] Executing cell 1/11 - Infrastructure: build (or reuse) the isolated environment and route later cells to it...
+{'isolated_environment': '/content/dimer_isolated_env_897b1924b14c', 'reused': False, 'isolated_python': '3.12.12', 'kernel_python': '3.13.15', 'locked_packages': 45, 'setup_seconds': 60}
+{'routed_to': '/content/dimer_isolated_env_897b1924b14c/bin/python', 'worker_pid': 2504, 'worker_reused': False}
+[colab] Executing cell 2/11 - Infrastructure: record the runtime...
+{'notebook_source': {'repository': 'mobilenetv4-classification-pipeline', 'repository_revision': '96da6288fa20f8126593170c665714b769f15594', 'embedded_module': 'src/mobilenetv4_classification_pipeline/pipeline.py', 'embedded_modules': ['src/mobilenetv4_classification_pipeline/pipeline.py'], 'module_sha256': '1a9f391f305027780c62cb8da75ef71e80b7ef2433bd9e7a1219145a1735043c', 'generator': 'build_notebook.py/2.2', 'notebook_spec': '2.0'}, 'python': '3.12.12', 'executable': '/content/dimer_isolated_env_897b1924b14c/bin/python', 'torch': '2.14.0+cu130', 'timm': '1.0.29', 'cuda': True}
+[colab] Executing cell 3/11 - mobilenetv4_classification-08...
+[colab] Executing cell 4/11 - Infrastructure: stage and digest-verify the pinned snapshot, then load the model...
+{'model_id': 'timm/mobilenetv4_conv_small.e2400_r224_in1k', 'revision': '331fb803779522b685cf942e15f914fb6741c1eb', 'license': 'apache-2.0', 'files': 3, 'total_bytes': 15236763}
+{'weights_dir': '/content/weights/mobilenetv4-conv-small', 'fetched': ['README.md', 'config.json', 'model.safetensors']}
+{'verified_files': 3, 'revision': '331fb803779522b685cf942e15f914fb6741c1eb'}
+{'device': 'cuda:0', 'source': 'local-snapshot'}
+[colab] Executing cell 5/11 - mobilenetv4_classification-12...
+{'sample_kind': 'synthetic', 'name': 'synthetic_gradient_256.png', 'mode': 'RGB', 'size': (256, 256), 'rgb_sha256': 'e38db00bd95756e739b8d2f6a69de029b011193c1e6a2a589aa546c4631adbdf', 'ground_truth_index': None}
+[colab] Executing cell 6/11 - mobilenetv4_classification-15...
+{'ceilings': {'NUM_CLASSES': 1000, 'MAX_IMAGE_SIDE': 4096, 'MAX_BATCH': 64}}
+{
+  "schema": {
+    "input": "PIL.Image.Image or a sequence of them; any mode, converted to RGB",
+    "image_side_px": [
+      1,
+      4096
+    ],
+    "batch": [
+      1,
+      64
+    ],
+    "top_k": [
+      1,
+      1000
+    ],
+    "preprocessing": "resize 256 px, center-crop 224x224 (crop_pct 0.875, bicubic), ImageNet normalisation"
+  },
+  "inputs": [
+    {
+      "id": "synthetic_gradient_256.png",
+      "mode": "RGB",
+      "size": [
+        256,
+        256
+      ]
+    }
+  ],
+  "top_k": 5,
+  "verdict": "accepted",
+  "findings": [
+    {
+      "input": "oversized-probe",
+      "verdict": "rejected",
+      "message": "image side outside 1..MAX_IMAGE_SIDE=4096 px: (4097, 8)"
+    }
+  ],
+  "model_id": "timm/mobilenetv4_conv_small.e2400_r224_in1k",
+  "model_revision": "331fb803779522b685cf942e15f914fb6741c1eb"
+}
+[colab] Executing cell 7/11 - mobilenetv4_classification-17...
+{'decision_rule': 'argmax', 'predicted_index': 818, 'predicted_label': 'spotlight, spot', 'device': 'cuda:0', 'source': 'local-snapshot'}
+ 1. index  818  score 0.0322  spotlight, spot
+ 2. index  644  score 0.0223  matchstick
+ 3. index  615  score 0.0201  knee pad
+ 4. index  813  score 0.0183  spatula
+ 5. index  446  score 0.0182  binder, ring-binder
+[colab] Executing cell 8/11 - mobilenetv4_classification-20...
+{
+  "task": "imagenet-1k single-label classification",
+  "decision_rule": "argmax",
+  "sample_kind": "synthetic",
+  "n_predictions": 1,
+  "baselines": [],
+  "model_id": "timm/mobilenetv4_conv_small.e2400_r224_in1k",
+  "model_revision": "331fb803779522b685cf942e15f914fb6741c1eb",
+  "metrics": [],
+  "verdict": "not-measurable",
+  "reason": "no ground-truth class index was supplied for the evaluated images",
+  "needs": "labelled photographs with ImageNet-1k class indices (0-999), e.g. a held-out sample of your own data, scored with top_k_accuracy against the majority-class baseline of that sample"
+}
+No ground-truth class index was supplied, so top_k_accuracy is not computed; the prediction above is sanity evidence only.
+[colab] Executing cell 9/11 - mobilenetv4_classification-23...
+{'dataset_source': 'Cleanlab/cifar-10-subset (MIT license, sha256:66f90a4f87d865e8...)', 'classes': ['frog', 'truck'], 'train_images': 160, 'val_images': 40, 'skipped_members': {'not_an_image': 0, 'val_class_not_in_train': 0, 'pixel_duplicate': 100}, 'split_assumption': 'images are independent after exact-duplicate removal'}
+{'fine_tuning': 'complete', 'dataset_source': 'Cleanlab/cifar-10-subset (MIT license, sha256:66f90a4f87d865e8...)', 'classes': ['frog', 'truck'], 'train_samples': 160, 'val_samples': 40, 'seconds': 7.2, 'trainable_parameters': 2562, 'frozen_parameters': 2493024, 'recipe': {'method': 'head-only linear probe on frozen backbone features', 'optimizer': 'AdamW', 'learning_rate': 0.001, 'epochs': 8, 'steps': 160, 'batch_size': 8, 'seed': 42, 'head_init': 'zeros', 'batchnorm_mode': 'eval (running statistics frozen)'}}
+{'epoch': 1, 'train_loss': 0.38448, 'val_loss': 0.13483, 'val_accuracy': 0.975}
+{'epoch': 2, 'train_loss': 0.13586, 'val_loss': 0.07255, 'val_accuracy': 0.975}
+{'epoch': 3, 'train_loss': 0.09715, 'val_loss': 0.04738, 'val_accuracy': 0.975}
+{'epoch': 4, 'train_loss': 0.0703, 'val_loss': 0.03186, 'val_accuracy': 1.0}
+{'epoch': 5, 'train_loss': 0.05882, 'val_loss': 0.0311, 'val_accuracy': 0.975}
+{'epoch': 6, 'train_loss': 0.07205, 'val_loss': 0.03632, 'val_accuracy': 0.975}
+{'epoch': 7, 'train_loss': 0.06461, 'val_loss': 0.01897, 'val_accuracy': 1.0}
+{'epoch': 8, 'train_loss': 0.08435, 'val_loss': 0.02826, 'val_accuracy': 0.975}
+{'chance_level_loss': 0.6931, 'final_train_loss': 0.08435, 'loss_fell_below_chance': True, 'reading': 'a final training loss well below ln(classes) means the head learned the training images; it says nothing yet about held-out images'}
+[colab] Executing cell 10/11 - mobilenetv4_classification-26...
+reload equivalence: max |score difference| over 40 held-out images = 0.00e+00 (tolerance 1e-05)
+=== Fine-Tuned Model In-Notebook Evaluation (same held-out split for every row) ===
+Validation Samples: 40 | Classes: ['frog', 'truck'] | one image = 2.5 points
+Majority Baseline:  50.00% (predicting 'frog')
+Zero-shot reference: 100.00% (pretrained 1000-class model read through ImageNet groups {'frog': [30, 31, 32], 'truck': [555, 569, 675, 717, 864, 867]}; no training)
+Fine-tuned (reloaded): 97.50% (39/40 correct; 95 % Wilson interval 87.12%-99.56%)
+Lift Over Baseline: +47.50%
+VERDICT: above-majority-baseline | fine-tuned model BELOW the zero-shot reference (adaptation lost ground)
+held-out images (first 12): true -> predicted (score)
+      frog -> frog     (0.977) ok
+      frog -> frog     (0.999) ok
+      frog -> frog     (0.999) ok
+      frog -> frog     (0.996) ok
+      frog -> frog     (0.987) ok
+      frog -> frog     (0.994) ok
+      frog -> frog     (0.997) ok
+      frog -> truck    (0.504) WRONG
+      frog -> frog     (0.992) ok
+      frog -> frog     (0.998) ok
+      frog -> frog     (0.967) ok
+      frog -> frog     (0.997) ok
+{
+  "accuracy": 0.975,
+  "accuracy_wilson_95": [
+    0.8712,
+    0.9956
+  ],
+  "one_image_in_points": 2.5,
+  "majority_baseline_accuracy": 0.5,
+  "zero_shot_reference_accuracy": 1.0,
+  "zero_shot_reference": "pretrained 1000-class model read through ImageNet groups {'frog': [30, 31, 32], 'truck': [555, 569, 675, 717, 864, 867]}; no training",
+  "accuracy_lift_over_baseline": 0.475,
+  "mean_confidence": 0.9773,
+  "reload_max_abs_score_diff": 0.0
+}
+{'new_data_inference': {'image': 'synthetic_gradient_256.png', 'predicted_label': 'truck', 'score': 0.9097, 'note': 'the gradient (or your BYOD image) belongs to neither class; the head answers anyway, which is why a softmax score is not a probability of being right'}}
+[colab] Executing cell 11/11 - mobilenetv4_classification-29...
+{'outputs': ['mobilenetv4_classification_evaluation_report.json', 'mobilenetv4_classification_finetuned', 'mobilenetv4_classification_finetuned_evaluation_report.json', 'mobilenetv4_classification_input_manifest.json', 'mobilenetv4_classification_result.json', 'mobilenetv4_classification_top_k.csv', 'mobilenetv4_classification_validation_predictions.csv'], 'finetuned': ['model-config.json', 'model.safetensors']}
+['outputs/mobilenetv4_classification_finetuned/model.safetensors', 'outputs/mobilenetv4_classification_finetuned/model-config.json']
+[colab] Saving notebook with outputs to '/home/kurt/colab-runs/mobilenetv4-classification-pipeline-a8a888d-b032d3/mobilenetv4_classification_colab_a8a888d_colab-cli-t4_output.ipynb'...

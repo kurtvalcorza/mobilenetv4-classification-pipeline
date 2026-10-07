@@ -60,7 +60,7 @@ print(pipe.predict(Image.new("RGB", (256, 256), (90, 140, 200)))["predictions"][
 
 ## Release status
 
-**Candidate.** Static/unit checks do not constitute clean-runtime notebook evidence. The clean-runtime run of the tutorial is pending; complete `docs/release-verification.md` against the exact release revision before calling the notebook release-grade.
+**Candidate.** Static/unit checks do not constitute clean-runtime notebook evidence. The current notebook blob `b622b4fb0c2c` passed a Colab CLI 0.7.4 sequential execution on a fresh Colab Tesla T4 in one pass (2026-10-07, commit `a8a888d`, 11/11 code cells, default path only); promotion to release-grade is a review decision against `docs/release-verification.md` for the exact release revision.
 
 ## Documents
 
