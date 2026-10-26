@@ -279,9 +279,12 @@ def _dataset_prefix(nb: dict) -> str:
 
 
 def _run_section8(nb: dict, *, byod_zip: bytes | None = None, urlopen=None) -> tuple[dict, str]:
+    import shutil
     import urllib.request
 
-    ns: dict = {"np": np, "Image": Image, "SAMPLE_SIDE": 256, "hashlib": hashlib}
+    cell4 = _cell_with(nb, "BYOD_PATH = ''")
+    ns: dict = {"np": np, "Image": Image, "SAMPLE_SIDE": 256, "hashlib": hashlib, "Path": Path, "shutil": shutil}
+    exec(cell4[cell4.index("class BYODRefusal(ValueError):") : cell4.index("def read_byod_file(")], ns)  # DAT20 helpers from Section 4
     prefix = _dataset_prefix(nb)
     if byod_zip is not None:
         prefix = prefix.replace("USE_BYOD_DATASET = False", "USE_BYOD_DATASET = True", 1)
