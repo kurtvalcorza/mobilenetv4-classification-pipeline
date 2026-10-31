@@ -60,7 +60,7 @@ print(pipe.predict(Image.new("RGB", (256, 256), (90, 140, 200)))["predictions"][
 
 ## Release status
 
-**Candidate.** Static/unit checks do not constitute clean-runtime notebook evidence. The current notebook blob `b622b4fb0c2c` passed a Colab CLI 0.7.4 sequential execution on a fresh Colab Tesla T4 in one pass (2026-10-07, commit `a8a888d`, 11/11 code cells, default path only); promotion to release-grade is a review decision against `docs/release-verification.md` for the exact release revision.
+**Candidate.** The current blob `621cabc6` (code commit `40e0db0`) shows a refused BYOD input as one `Refused: <file>: <reason>` line with no traceback, removes the earlier run's results and `outputs/` files and stops Run all at that cell, while genuine failures keep their traceback (NOTEBOOK_SPEC DAT19/DAT20); on 2026-10-30 its default path (11/11 code cells, one pass, no restart, 0 errors) and its scripted DAT20 refusal (`USE_BYOD=True;BYOD_PATH='/etc/hostname'`: exactly one `Refused:` line at cell `mobilenetv4_classification-12`, no traceback, earlier cells clean, VM released) both passed on a hosted Colab Tesla T4 (Colab CLI sequential execution, not a browser `Run all`; see "Recorded executions" in `docs/release-verification.md`), and the hosted runs of earlier blobs, including `b622b4fb`, are history for it (REL14). Static/unit checks do not constitute clean-runtime notebook evidence. The earlier notebook blob `b622b4fb0c2c` (history for the current blob, REL14) passed a Colab CLI 0.7.4 sequential execution on a fresh Colab Tesla T4 in one pass (2026-10-07, commit `a8a888d`, 11/11 code cells, default path only); promotion to release-grade is a review decision against `docs/release-verification.md` for the exact release revision.
 
 ## Documents
 

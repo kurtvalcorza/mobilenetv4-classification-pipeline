@@ -220,7 +220,17 @@ def test_swp_g_no_leftover_placeholders(nb: dict) -> None:
 def _byod_reader(nb: dict) -> object:
     from pathlib import Path as _Path
 
-    return _function(_cell_with(nb, "BYOD_PATH = ''"), "read_byod_file", {"os": os, "Path": _Path})
+    return _function(_cell_with(nb, "BYOD_PATH = ''"), "read_byod_file", {"os": os, "Path": _Path, **_refusal_helpers(nb)})
+
+
+def _refusal_helpers(nb: dict) -> dict:
+    """DAT20: the BYODRefusal class and refuse_byod helper that the Section 4 BYOD cell defines for later cells."""
+    import shutil
+
+    source = _cell_with(nb, "BYOD_PATH = ''")
+    ns: dict = {"Path": Path, "shutil": shutil}
+    exec(source[source.index("class BYODRefusal(ValueError):") : source.index("def read_byod_file(")], ns)
+    return {k: ns[k] for k in ("BYODRefusal", "refuse_byod", "RUN_RESULT_NAMES", "RUN_OUTPUTS")}
 
 
 def test_swp_b_byod_path_fields_default_off(nb: dict) -> None:
@@ -236,12 +246,12 @@ def test_swp_b_byod_path_reads_file_and_refuses_with_names(nb: dict, tmp_path: P
     image = tmp_path / "leaf.png"
     image.write_bytes(b"\x89PNG data")
     assert read(str(image), "image file") == ("leaf.png", b"\x89PNG data")
-    with pytest.raises(FileNotFoundError, match="missing.png"):
+    with pytest.raises(ValueError, match="^missing.png: BYOD path"):
         read(str(tmp_path / "missing.png"), "image file")
     with pytest.raises(ValueError, match=r"leaf.png: expected a dataset .zip archive ending in \.zip"):
         read(str(image), "dataset .zip archive", (".zip",))
     sys.modules.pop("google.colab", None)
-    with pytest.raises(RuntimeError, match="only in Google Colab"):
+    with pytest.raises(ValueError, match=r"^\(no file\): .*only in Google Colab"):
         read("", "image file")
 
 
@@ -295,7 +305,7 @@ def _run_dataset(nb: dict, archive: bytes) -> dict:
     import numpy as np
     from PIL import Image
 
-    namespace = {"np": np, "Image": Image, "SAMPLE_SIDE": 256, "read_byod_file": lambda *a, **k: ("mine.zip", archive)}
+    namespace = {"np": np, "Image": Image, "SAMPLE_SIDE": 256, "Path": Path, **_refusal_helpers(nb), "read_byod_file": lambda *a, **k: ("mine.zip", archive)}
     with contextlib.redirect_stdout(io.StringIO()):
         exec(compile(_dataset_prefix(nb), "<section 8>", "exec"), namespace)
     return namespace
