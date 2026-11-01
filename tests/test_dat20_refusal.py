@@ -14,6 +14,7 @@ from __future__ import annotations
 import io
 import json
 import os
+import re
 import signal
 import subprocess
 import sys
@@ -339,3 +340,68 @@ def test_good_dataset_still_splits(monkeypatch, tmp_path):
     (tmp_path / "two.zip").write_bytes(_zip({"cats/a.png": _png(1), "cats/b.png": _png(2), "dogs/c.png": _png(3), "dogs/d.png": _png(4)}))
     ns = _section8(monkeypatch, tmp_path, str(tmp_path / "two.zip"))
     assert ns["CUSTOM_CLASSES"] == ["cats", "dogs"] and ns["dataset_source"] == "BYOD: two.zip"
+
+
+# --- the catches are narrow: only bad input is refused; an internal TypeError/KeyError/OSError keeps its traceback ---
+
+
+def test_the_byod_catches_are_narrow_in_the_notebook_source():
+    image = _cell(BYOD_CELL)
+    dataset = _cell(DATASET_CELL)
+    assert "        try:\n            name, data = source.name, source.read_bytes()\n        except OSError as exc:\n" in image
+    branch = image.split("if USE_BYOD:\n", 1)[1].split("\nelse:\n", 1)[0]
+    caught = re.findall(r"^    except (.+?)(?: as \w+)?:$", branch, flags=re.M)
+    assert caught == ["BYODRefusal", "ValueError"], caught
+    body = dataset.split("ft_output_dir = ", 1)[0]
+    assert re.findall(r"^except (.+?)(?: as \w+)?:$", body, flags=re.M) == ["BYODRefusal", "ValueError"]
+    inner = re.findall(r"^\s*except (.+?)(?: as \w+)?:$", body, flags=re.M)
+    assert not [c for c in inner if "KeyError" in c or "TypeError" in c or "OSError" in c], inner
+
+
+@pytest.mark.parametrize("section", ["image", "dataset"])
+def test_an_unreadable_byod_file_is_still_one_refused_line(monkeypatch, tmp_path, section):
+    import pathlib
+
+    monkeypatch.setitem(sys.modules, "google.colab", None)
+    (tmp_path / "locked.zip").write_bytes(b"x")
+
+    def unreadable(self):
+        raise PermissionError(13, "Permission denied", str(self))
+
+    monkeypatch.setattr(pathlib.Path, "read_bytes", unreadable)
+    with pytest.raises(ValueError) as caught:
+        (_section4 if section == "image" else _section8)(monkeypatch, tmp_path, str(tmp_path / "locked.zip"))
+    line = _refusal_line(caught.value)
+    assert line.startswith("Refused: locked.zip: the file cannot be read (PermissionError: "), line
+
+
+@pytest.mark.parametrize("error", ["TypeError('internal helper bug')", "OSError('internal I/O bug')"], ids=["TypeError", "OSError"])
+def test_an_internal_error_in_the_image_branch_keeps_its_traceback(monkeypatch, tmp_path, error):
+    import traceback
+
+    monkeypatch.setitem(sys.modules, "google.colab", None)
+    Image.new("RGB", (32, 32)).save(tmp_path / "ok.png")
+    marker = "    except BYODRefusal as exc:\n        refuse_byod(exc.file_name, exc.reason)\n"
+    source = _cell(BYOD_CELL).replace(marker, f"        raise {error}\n" + marker, 1)
+    with pytest.raises(Exception) as caught:
+        _section4(monkeypatch, tmp_path, str(tmp_path / "ok.png"), source)
+    assert type(caught.value).__name__ == error.split("(")[0] and not getattr(caught.value, "dimer_refusal", False)
+    rendered = "".join(traceback.format_exception(caught.value))
+    assert rendered.startswith("Traceback") and "Refused:" not in rendered
+    assert (tmp_path / "outputs" / f"{STEM}_result.json").exists()  # nothing is removed for an internal error
+
+
+@pytest.mark.parametrize("error", ["TypeError('internal helper bug')", "KeyError('internal key')", "OSError('internal I/O bug')"], ids=["TypeError", "KeyError", "OSError"])
+def test_an_internal_error_in_the_dataset_branch_keeps_its_traceback(monkeypatch, tmp_path, error):
+    import traceback
+
+    monkeypatch.setitem(sys.modules, "google.colab", None)
+    (tmp_path / "two.zip").write_bytes(_zip({"cats/a.png": _png(1), "cats/b.png": _png(2), "dogs/c.png": _png(3), "dogs/d.png": _png(4)}))
+    marker = "            def _class_from_path(p):\n"
+    source = _cell(DATASET_CELL).replace(marker, marker + f"                raise {error}\n", 1)
+    with pytest.raises(Exception) as caught:
+        _section8(monkeypatch, tmp_path, str(tmp_path / "two.zip"), source)
+    assert type(caught.value).__name__ == error.split("(")[0] and not getattr(caught.value, "dimer_refusal", False)
+    rendered = "".join(traceback.format_exception(caught.value))
+    assert rendered.startswith("Traceback") and "_class_from_path" in rendered and "Refused:" not in rendered
+    assert (tmp_path / "outputs" / f"{STEM}_result.json").exists()  # nothing is removed for an internal error
