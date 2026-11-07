@@ -1,0 +1,69 @@
+{
+  "repo": "mobilenetv4-classification-pipeline",
+  "sha": "a87a275231987e20cf78dfea7ee688961923a670",
+  "notebook": "tutorials/mobilenetv4_classification_colab.ipynb",
+  "blob": "d2a0d707e6dc30fed4c53d6f38f5f18496b7e361",
+  "gpu": "T4",
+  "session": "suite-mobilenetv4-a87a275-b032",
+  "started_utc": "2026-11-03T01:20:37+00:00",
+  "runner": "Colab CLI `colab exec -f` on a fresh session (not a browser Run all)",
+  "overrides": [
+    {
+      "name": "USE_BYOD",
+      "from": "False",
+      "to": "True"
+    },
+    {
+      "name": "BYOD_PATH",
+      "from": "''",
+      "to": "'/etc/hostname'"
+    }
+  ],
+  "run_copy_blob": "636f8545b7dd44776bdefdfcdc15d6bf6775748b",
+  "run_copy_sha256": "96d365c15c0babe40da49762328ce22add89325bb2ff634ec5feb297d6dfac86",
+  "run_copy_note": "refusal run: the run copy is the committed notebook with the listed assignment overrides, cut immediately after the refusal cell and re-serialised (nbformat layout); input_unchanged compares against that copy",
+  "truncated_after_cell": "mobilenetv4_classification-12",
+  "refusal_cell_ref": "mobilenetv4_classification-12",
+  "refusal_cell_index": 5,
+  "cells_dropped": 18,
+  "code_cells_dropped": 6,
+  "original_sha256": "920fe6e42ca723cca7747999f31dad9a526f353d47830f0738e73e6375087af3",
+  "status": "[suite-mobilenetv4-a87a275-b032] gpu-t4-s-usw4a3-3ex275yg1sv3j | Hardware: T4 | Shape: Standard | Variant: GPU | Status: IDLE",
+  "exec_exit_code": 0,
+  "stopped": true,
+  "stop_verified": true,
+  "wall_s": 89.8,
+  "input_unchanged": true,
+  "executed_file": "mobilenetv4_classification_colab_a87a275_colab-cli-t4_output.ipynb",
+  "log_cells": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "log_total": 5,
+  "code_cells": 5,
+  "executed_cells": 4,
+  "errors": [
+    {
+      "cell": "mobilenetv4_classification-12",
+      "ename": "IsolatedCellRefusal",
+      "evalue": "hostname: Pillow cannot decode this file (cannot identify image file <_io.BytesIO object at 0x78fba83db740>); BYOD needs one PNG, JPEG, WebP or similar image; fix the input and run this cell again (the earlier results of this session and their outputs/ files were removed)."
+    }
+  ],
+  "execution_counts": [],
+  "sequential": null,
+  "executed_sha256": "4867b6740eb481ad205614de7536b739209d030f39a0f80ab459c471dc2c49e3",
+  "log_sequential_complete": true,
+  "mode": "expect_refusal",
+  "refusal_line": "Refused: hostname: Pillow cannot decode this file (cannot identify image file <_io.BytesIO object at 0x78fba83db740>); BYOD needs one PNG, JPEG, WebP or similar image; fix the input and run this cell again (the earlier results of this session and their outputs/ files were removed).",
+  "halting_cell_index": 5,
+  "halting_cell_id": "mobilenetv4_classification-12",
+  "error_cells": [
+    5
+  ],
+  "refusal_fail_reasons": [],
+  "refusal_ok": true,
+  "verdict": "PASS"
+}
